@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FormWrapper from "./FormWrapper";
 import { AiOutlineBars, AiOutlineClose, AiOutlinePlus } from "react-icons/ai";
-import { Assets, QUESTIONS, generateRandomId, testNumber } from "../utils/constants";
+import { Assets, QUESTIONS, generateId, generateRandomId, testNumber } from "../utils/constants";
 import { InboxOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import React, { ChangeEvent, useEffect, useState } from "react";
@@ -268,19 +268,19 @@ export default function ApplicationForm() {
     switch (selectedMenu) {
       case "personalInformation":
         let _questions = payload.attributes[selectedMenu]?.personalQuestions
-        _questions = [..._questions, {...newQuestion, id: generateRandomId()}];
+        _questions = [..._questions, {...newQuestion, id: generateId()}];
         payload.attributes[selectedMenu].personalQuestions = _questions;
         setPayload(payload);
         break;
       case "profile":
         let _questions2 = payload.attributes[selectedMenu]?.profileQuestions
-        _questions2 = [..._questions2, {...newQuestion, id: generateRandomId()}];
+        _questions2 = [..._questions2, {...newQuestion, id: generateId()}];
         payload.attributes[selectedMenu].profileQuestions = _questions2;
         setPayload(payload);
         break;
       case "customisedQuestions":
         let _questions3 = payload.attributes[selectedMenu]
-        _questions3 = [..._questions3, {...newQuestion, id: generateRandomId()}];
+        _questions3 = [..._questions3, {...newQuestion, id: generateId()}];
         payload.attributes[selectedMenu] = _questions3;
         setPayload(payload);
         break;
@@ -289,8 +289,21 @@ export default function ApplicationForm() {
     }
     handleCancel()
   }
+
+  function Validation() {
+    if (!payload.attributes.coverImage) {
+      return "Please upload an image"
+    }
+    return
+  }
   
   async function handleSubmit() {
+
+    const validdate = Validation()
+    if (validdate) {
+      return message.error(validdate);
+    }
+
     setLoading(true);
     try {
       const res = await SubmitPayload(payload);
@@ -298,16 +311,10 @@ export default function ApplicationForm() {
       console.log("res", res);
       
     } catch (error:any) {
-      message.error(error?.message || error)
+      message.error("Oops, operation failed")
     }
     setLoading(false);
   }
-
-  useEffect(() => {
-    console.log("payload", payload.attributes.coverImage);
-
-  }, [payload])
-
 
 
   return (
@@ -465,7 +472,7 @@ export default function ApplicationForm() {
                           }}
                         />
                         <div>
-                          internal
+                          mandatory
                         </div>
                       </div>
 
@@ -754,7 +761,7 @@ function QuestionsComponent({ question, update, save, reset }: IQuestionComponen
 
             <div className="mt-3 flex gap-2 items-center">
               <Checkbox
-                checked={question.other}
+                checked={question.disqualify}
                 onChange={(e) => {
                   update({
                     ...question,

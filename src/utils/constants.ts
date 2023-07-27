@@ -22,6 +22,7 @@ import user_check from "../assets/user_check.svg";
 import user_echo from "../assets/user_echo.svg";
 import userx from "../assets/userx.svg";
 import list from "../assets/list.svg";
+import { v4 as uuidv4 } from 'uuid';
 
 export const Assets = {
   calender,
@@ -95,4 +96,8 @@ export function generateRandomId() {
   }
 
   return randomId;
+}
+
+export function generateId() {
+  return uuidv4();
 }

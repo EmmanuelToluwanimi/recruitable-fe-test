@@ -7,7 +7,7 @@ export async function SubmitPayload(payload: IApplicationSchema) {
   try {
     const response = await axios.put(
       API_URL,
-      payload,
+      {data: payload},
       {
         headers : {
           'Content-Type': 'application/json',
@@ -17,6 +17,6 @@ export async function SubmitPayload(payload: IApplicationSchema) {
 
     return response.data;
   } catch (error) {
-    throw new Error("");
+    throw new Error("An error occurred");
   }
 } 
