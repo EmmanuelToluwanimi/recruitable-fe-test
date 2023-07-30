@@ -4,55 +4,29 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FormWrapper from "./FormWrapper";
-import { AiOutlineBars, AiOutlineClose, AiOutlinePlus } from "react-icons/ai";
-import { Assets, QUESTIONS, generateId, testNumber } from "../utils/constants";
+import { AiOutlineClose } from "react-icons/ai";
+import { Assets, defaultQuestion, generateId } from "../utils/constants";
 import type { UploadFile, UploadProps } from 'antd';
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { UploadChangeParam } from "antd/es/upload";
-
-
 import {
   Checkbox,
-  Input,
-  Select,
   Switch,
   Upload,
   message,
-  Modal,
-
 } from 'antd';
 import { IApplicationSchema, IPersonalInput, Question } from "../interface";
 import { GetApplicationSchemaPayload, SubmitPayload } from "../services";
 import LoadingScreen from "./LoadingScreen";
+import AdditionalQuestionsComponent from "./AdditionalQuestionsComponent";
+import UpdateQuestionComponent from "./UpdateQuestionComponent";
+import QuestionsComponent from "./QuestionsComponent";
+import AddQuestionButton from "./AddQuestionButton";
 
 const { Dragger } = Upload;
 
-const defaultQuestion = {
-  "id": "",
-  "type": "",
-  "question": "",
-  "choices": [""],
-  "maxChoice": 0,
-  "disqualify": false,
-  "other": false
-}
-
 export default function ApplicationForm() {
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const showModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleOk = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-    ResetQuestion();
-  };
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedMenu, setSelectedMenu] = useState("");
@@ -350,14 +324,6 @@ export default function ApplicationForm() {
     setSelectedMenu("");
   }
 
-  function FilterQuestions(questions: Question[], type: boolean) {
-    if (type === true) {
-      return questions.filter(data => data.id !== "");
-    } else {
-      return questions.filter(data => data.id === "");
-    }
-  }
-
   function Validation() {
     if (!payload.attributes.coverImage) {
       return "Please upload an image"
@@ -415,26 +381,8 @@ export default function ApplicationForm() {
     return <LoadingScreen />
   }
 
-  /**
-   * @todo: duplicate update to the rest and componentize update ui;
-   */
-
   return (
     <div className="px-10">
-
-      {/* modal */}
-      {/* <>
-        <Modal title="Modal" footer={null} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-          <div className="flex justify-center">
-            <QuestionsComponent
-              question={newQuestion}
-              update={setNewQuestion}
-              save={SaveQuestion}
-              reset={ResetQuestion}
-            />
-          </div>
-        </Modal>
-      </> */}
 
       {/* coverimag */}
       <>
@@ -484,36 +432,38 @@ export default function ApplicationForm() {
                       <div className="font-semibold ">{data.name}</div>
                       {data.subtext && <div className="font-thin text-xs">{data.subtext}</div>}
                     </div>
-                    {data.hasOptions && <div className="flex gap-3 items-center">
-                      {/* <img src={Assets.pen} alt="pen" /> */}
-                      <div className="flex gap-2 items-center">
-                        <Checkbox
-                          value={payload.attributes.personalInformation[data.value]?.internalUse}
-                          onChange={(e) => {
-                            const newObj = { ...payload }
-                            newObj.attributes.personalInformation[data.value].internalUse = e.target.checked;
-                            setPayload(newObj);
-                          }}
-                        />
-                        <div>
-                          internal
-                        </div>
-                      </div>
+                    {
+                      data.hasOptions && <div className="flex gap-3 items-center">
 
-                      <div className="flex gap-2 items-center">
-                        <Switch className="shadow"
-                          checked={payload.attributes.personalInformation[data.value]?.show}
-                          onChange={(e) => {
-                            const newObj = { ...payload }
-                            newObj.attributes.personalInformation[data.value].show = e;
-                            setPayload(newObj);
-                          }}
-                        />
-                        <div>
-                          {payload.attributes.personalInformation[data.value]?.show ? "show" : "hide"}
+                        <div className="flex gap-2 items-center">
+                          <Checkbox
+                            value={payload.attributes.personalInformation[data.value]?.internalUse}
+                            onChange={(e) => {
+                              const newObj = { ...payload }
+                              newObj.attributes.personalInformation[data.value].internalUse = e.target.checked;
+                              setPayload(newObj);
+                            }}
+                          />
+                          <div>
+                            internal
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 items-center">
+                          <Switch className="shadow"
+                            checked={payload.attributes.personalInformation[data.value]?.show}
+                            onChange={(e) => {
+                              const newObj = { ...payload }
+                              newObj.attributes.personalInformation[data.value].show = e;
+                              setPayload(newObj);
+                            }}
+                          />
+                          <div>
+                            {payload.attributes.personalInformation[data.value]?.show ? "show" : "hide"}
+                          </div>
                         </div>
                       </div>
-                    </div>}
+                    }
                   </div>
                 </div>
               )
@@ -529,251 +479,54 @@ export default function ApplicationForm() {
             return (
               <>
                 <div key={i} className="border-b mt-4">
-                  <div className="font-light text-xs">{data.type}</div>
-                  <div className="font-semibold pt-2 pb-6 flex justify-between items-center">
-                    <div className="w-[75%] ">{data.question}</div>
-                    <div className="p-2" onClick={() => ToggleUpdateQuestion(i, "personalInformation", data)}>
-                      <img src={Assets.pen} alt="pen" />
-                    </div>
-                  </div>
+                  <>
+                    <AdditionalQuestionsComponent
+                      ToggleUpdateQuestion={ToggleUpdateQuestion}
+                      data={data}
+                      index={i}
+                    />
+                  </>
+
+                  {
+                    (selectedIndex[0] === i && selectedIndex[1] === "customisedQuestions") &&
+                    <UpdateQuestionComponent
+                      DeleteQuestion={DeleteQuestion}
+                      SaveUpdatedQuestion={SaveUpdatedQuestion}
+                      UpdateFieldOperation={UpdateFieldOperation}
+                      data={data}
+                      newQuestion={newQuestion}
+                    />
+                  }
                 </div>
 
-                {
-                  (selectedIndex[0] === i && selectedIndex[1] === "personalInformation") &&
-                  <form className="mt-4">
-                    <div>
-                      <label className="font-semibold">Type</label>
-                      <div className="mt-3">
-                        <Select
-                          defaultValue=""
-                          style={{ width: "100%" }}
-                          size="large"
-                          value={newQuestion.type}
-                          onChange={(e) => {
-                            UpdateFieldOperation(data, { type: e })
-                          }}
-                          options={QUESTIONS}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <label className="font-semibold">Question</label>
-                      <div className="mt-3">
-                        <Input
-                          size="large"
-                          value={newQuestion.question}
-                          onChange={(e) => UpdateFieldOperation(data, { question: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    {/* for multichoice */}
-                    {data.type === "Multiple Choice" && <>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Choice</label>
-
-                        {/* loop here */}
-                        {
-                          newQuestion.choices.map((_data, i) => {
-                            return (
-                              <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                <button type="button" className="p-2 font-bold text-lg">
-                                  <AiOutlineBars />
-                                </button>
-                                <Input size="large"
-                                  defaultValue={_data}
-                                  value={_data}
-                                  onChange={(e) => {
-                                    const newChoices = [...newQuestion.choices]
-                                    newChoices[i] = e.target.value
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                />
-                                <button type="button" className="p-2 font-bold text-lg"
-                                  onClick={() => {
-                                    const newChoices = [...data.choices, ""]
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                >
-                                  <AiOutlinePlus />
-                                </button>
-                              </div>
-                            )
-                          })
-                        }
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.other}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                other: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Enable “Other” option </span>
-                        </div>
-
-                      </div>
-
-
-                      <div className="mt-3">
-                        <div>
-                          <label className="font-semibold">Max choice allowed</label>
-                          <div className="mt-3">
-                            <Input size="large"
-                              defaultValue={newQuestion.maxChoice}
-                              value={newQuestion.maxChoice}
-                              onChange={(e) => {
-                                const { value } = e.target
-                                if (value !== "" && !testNumber(value)) {
-                                  message.error("Only numbers are allowed in multiple choice")
-                                } else {
-                                  UpdateFieldOperation(data, {
-                                    maxChoice: Number(e.target.value || 0)
-                                  })
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                      </div>
-                    </>}
-
-                    {/* for dropdown */}
-                    {data.type === "Dropdown" && <>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Choice</label>
-
-                        {/* loop here */}
-                        {
-                          newQuestion.choices.map((_data, i) => {
-                            return (
-                              <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                <button type="button" className="p-2 font-bold text-lg">
-                                  <AiOutlineBars />
-                                </button>
-                                <Input size="large"
-                                  defaultValue={_data}
-                                  value={_data}
-                                  onChange={(e) => {
-                                    const newChoices = [...newQuestion.choices]
-                                    newChoices[i] = e.target.value
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                />
-                                <button type="button" className="p-2 font-bold text-lg"
-                                  onClick={() => {
-                                    const newChoices = [...newQuestion.choices, ""]
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                >
-                                  <AiOutlinePlus />
-                                </button>
-                              </div>
-                            )
-                          })
-                        }
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.other}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                other: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Enable “Other” option </span>
-                        </div>
-
-                      </div>
-
-                    </>}
-
-                    {/* for Yes/No */}
-                    {data.type === "Yes/No" && <>
-
-                      <div className="mt-3">
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.disqualify}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                disqualify: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
-                        </div>
-
-                      </div>
-
-                    </>}
-
-                    <div className="flex justify-between items-center py-4">
-                      <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
-                        onClick={() => DeleteQuestion()}
-                      >
-                        <AiOutlineClose className="text-textRed text-xl font-bold" />
-                        <span>Delete questions</span>
-                      </button>
-
-                      <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
-                        onClick={() => {
-                          // console.log("helooo", question);
-                          SaveUpdatedQuestion()
-                        }}
-                      >
-                        <span>Save</span>
-                      </button>
-
-                    </div>
-
-                  </form>
-                }
               </>
             )
           })
         }
 
-        {/* {
-          <QuestionsComponent
-            question={newQuestion}
-            update={setNewQuestion}
-            save={SaveQuestion}
-            reset={ResetQuestion}
-          />
-        } */}
+        <>
+          {
+            selectedMenu === "personalInformation" &&
+            < QuestionsComponent
+              question={newQuestion}
+              update={setNewQuestion}
+              save={SaveQuestion}
+              reset={ResetQuestion}
+            />
+          }
+        </>
 
-        <div
-          onClick={() => AddQuestion("personalInformation")}
-          className="flex items-center gap-3 font-semibold pt-6 pb-4 rounded-b" role="button">
-          <div>
-            <AiOutlinePlus className="text-xl" />
-          </div>
-          <div>
-            Add a question
-          </div>
-        </div>
+        <>
+          <AddQuestionButton
+            AddQuestion={AddQuestion}
+            selectedMenu={selectedMenu}
+            type="personalInformation"
+          />
+        </>
       </FormWrapper>
 
       <FormWrapper title="Profile">
         <div>
-
           {
             ProfileInputs.map((data: IPersonalInput, i) => {
               return (
@@ -818,7 +571,6 @@ export default function ApplicationForm() {
               )
             })
           }
-
         </div>
 
         {
@@ -827,471 +579,33 @@ export default function ApplicationForm() {
             return (
               <>
                 <div key={i} className="border-b mt-4">
-                  <div className="font-light text-xs">{data.type}</div>
-                  <div className="font-semibold pt-2 pb-6 flex justify-between items-center">
-                    <div className="w-[75%] ">{data.question}</div>
-                    <div className="p-2" onClick={() => ToggleUpdateQuestion(i, "profile", data)}>
-                      <img src={Assets.pen} alt="pen" />
-                    </div>
-                  </div>
+                  <>
+                    <AdditionalQuestionsComponent
+                      ToggleUpdateQuestion={ToggleUpdateQuestion}
+                      data={data}
+                      index={i}
+                    />
+                  </>
+
+                  {
+                    (selectedIndex[0] === i && selectedIndex[1] === "profile") &&
+                    <UpdateQuestionComponent
+                      DeleteQuestion={DeleteQuestion}
+                      SaveUpdatedQuestion={SaveUpdatedQuestion}
+                      UpdateFieldOperation={UpdateFieldOperation}
+                      data={data}
+                      newQuestion={newQuestion}
+                    />
+                  }
                 </div>
-
-                {
-                  (selectedIndex[0] === i && selectedIndex[1] === "profile") &&
-                  <form className="mt-4">
-                    <div>
-                      <label className="font-semibold">Type</label>
-                      <div className="mt-3">
-                        <Select
-                          defaultValue=""
-                          style={{ width: "100%" }}
-                          size="large"
-                          value={newQuestion.type}
-                          onChange={(e) => {
-                            UpdateFieldOperation(data, { type: e })
-                          }}
-                          options={QUESTIONS}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <label className="font-semibold">Question</label>
-                      <div className="mt-3">
-                        <Input
-                          size="large"
-                          value={newQuestion.question}
-                          onChange={(e) => UpdateFieldOperation(data, { question: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    {/* for multichoice */}
-                    {data.type === "Multiple Choice" && <>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Choice</label>
-
-                        {/* loop here */}
-                        {
-                          newQuestion.choices.map((_data, i) => {
-                            return (
-                              <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                <button type="button" className="p-2 font-bold text-lg">
-                                  <AiOutlineBars />
-                                </button>
-                                <Input size="large"
-                                  defaultValue={_data}
-                                  value={_data}
-                                  onChange={(e) => {
-                                    const newChoices = [...newQuestion.choices]
-                                    newChoices[i] = e.target.value
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                />
-                                <button type="button" className="p-2 font-bold text-lg"
-                                  onClick={() => {
-                                    const newChoices = [...data.choices, ""]
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                >
-                                  <AiOutlinePlus />
-                                </button>
-                              </div>
-                            )
-                          })
-                        }
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.other}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                other: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Enable “Other” option </span>
-                        </div>
-
-                      </div>
-
-
-                      <div className="mt-3">
-                        <div>
-                          <label className="font-semibold">Max choice allowed</label>
-                          <div className="mt-3">
-                            <Input size="large"
-                              defaultValue={newQuestion.maxChoice}
-                              value={newQuestion.maxChoice}
-                              onChange={(e) => {
-                                const { value } = e.target
-                                if (value !== "" && !testNumber(value)) {
-                                  message.error("Only numbers are allowed in multiple choice")
-                                } else {
-                                  UpdateFieldOperation(data, {
-                                    maxChoice: Number(e.target.value || 0)
-                                  })
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                      </div>
-                    </>}
-
-                    {/* for dropdown */}
-                    {data.type === "Dropdown" && <>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Choice</label>
-
-                        {/* loop here */}
-                        {
-                          newQuestion.choices.map((_data, i) => {
-                            return (
-                              <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                <button type="button" className="p-2 font-bold text-lg">
-                                  <AiOutlineBars />
-                                </button>
-                                <Input size="large"
-                                  defaultValue={_data}
-                                  value={_data}
-                                  onChange={(e) => {
-                                    const newChoices = [...newQuestion.choices]
-                                    newChoices[i] = e.target.value
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                />
-                                <button type="button" className="p-2 font-bold text-lg"
-                                  onClick={() => {
-                                    const newChoices = [...newQuestion.choices, ""]
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                >
-                                  <AiOutlinePlus />
-                                </button>
-                              </div>
-                            )
-                          })
-                        }
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.other}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                other: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Enable “Other” option </span>
-                        </div>
-
-                      </div>
-
-                    </>}
-
-                    {/* for Yes/No */}
-                    {data.type === "Yes/No" && <>
-
-                      <div className="mt-3">
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.disqualify}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                disqualify: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
-                        </div>
-
-                      </div>
-
-                    </>}
-
-                    <div className="flex justify-between items-center py-4">
-                      <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
-                        onClick={() => DeleteQuestion()}
-                      >
-                        <AiOutlineClose className="text-textRed text-xl font-bold" />
-                        <span>Delete questions</span>
-                      </button>
-
-                      <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
-                        onClick={() => {
-                          // console.log("helooo", question);
-                          SaveUpdatedQuestion()
-                        }}
-                      >
-                        <span>Save</span>
-                      </button>
-
-                    </div>
-
-                  </form>
-                }
               </>
             )
           })
         }
 
-        <div
-          onClick={() => AddQuestion("profile")}
-          className="flex items-center gap-3 font-semibold pt-6 pb-4 rounded-b" role="button">
-          <div>
-            <AiOutlinePlus className="text-xl" />
-          </div>
-          <div>
-            Add a question
-          </div>
-        </div>
-      </FormWrapper>
-
-      <FormWrapper title="Additional questions">
-        <div>
+        <>
           {
-            payload.attributes.customisedQuestions.length > 0 &&
-            payload.attributes.customisedQuestions.map((data, i) => {
-              return (
-                <div key={i} className="border-b mt-4">
-                  <div className="font-light text-xs">{data.type}</div>
-                  <div className="font-semibold pt-2 pb-6 flex justify-between items-center">
-                    <div className="w-[75%] ">{data.question}</div>
-                    <div className="p-2" onClick={() => ToggleUpdateQuestion(i, "customisedQuestions", data)}>
-                      <img src={Assets.pen} alt="pen" />
-                    </div>
-                  </div>
-
-                  {
-                    (selectedIndex[0] === i && selectedIndex[1] === "customisedQuestions") &&
-                    <form className="">
-                      <div>
-                        <label className="font-semibold">Type</label>
-                        <div className="mt-3">
-                          <Select
-                            defaultValue=""
-                            style={{ width: "100%" }}
-                            size="large"
-                            value={newQuestion.type}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, { type: e })
-                            }}
-                            options={QUESTIONS}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Question</label>
-                        <div className="mt-3">
-                          <Input
-                            size="large"
-                            value={newQuestion.question}
-                            onChange={(e) => UpdateFieldOperation(data, { question: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      {/* for multichoice */}
-                      {data.type === "Multiple Choice" && <>
-
-                        <div className="mt-3">
-                          <label className="font-semibold">Choice</label>
-
-                          {/* loop here */}
-                          {
-                            newQuestion.choices.map((_data, i) => {
-                              return (
-                                <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                  <button type="button" className="p-2 font-bold text-lg">
-                                    <AiOutlineBars />
-                                  </button>
-                                  <Input size="large"
-                                    defaultValue={_data}
-                                    value={_data}
-                                    onChange={(e) => {
-                                      const newChoices = [...newQuestion.choices]
-                                      newChoices[i] = e.target.value
-                                      UpdateFieldOperation(data, {
-                                        choices: newChoices
-                                      })
-                                    }}
-                                  />
-                                  <button type="button" className="p-2 font-bold text-lg"
-                                    onClick={() => {
-                                      const newChoices = [...data.choices, ""]
-                                      UpdateFieldOperation(data, {
-                                        choices: newChoices
-                                      })
-                                    }}
-                                  >
-                                    <AiOutlinePlus />
-                                  </button>
-                                </div>
-                              )
-                            })
-                          }
-
-                          <div className="mt-3 flex gap-2 items-center">
-                            <Checkbox
-                              checked={newQuestion.other}
-                              onChange={(e) => {
-                                UpdateFieldOperation(data, {
-                                  other: e.target.checked
-                                })
-                              }}
-                            />
-                            <span className="font-light text-xs">Enable “Other” option </span>
-                          </div>
-
-                        </div>
-
-
-                        <div className="mt-3">
-                          <div>
-                            <label className="font-semibold">Max choice allowed</label>
-                            <div className="mt-3">
-                              <Input size="large"
-                                defaultValue={newQuestion.maxChoice}
-                                value={newQuestion.maxChoice}
-                                onChange={(e) => {
-                                  const { value } = e.target
-                                  if (value !== "" && !testNumber(value)) {
-                                    message.error("Only numbers are allowed in multiple choice")
-                                  } else {
-                                    UpdateFieldOperation(data, {
-                                      maxChoice: Number(e.target.value || 0)
-                                    })
-                                  }
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                        </div>
-                      </>}
-
-                      {/* for dropdown */}
-                      {data.type === "Dropdown" && <>
-
-                        <div className="mt-3">
-                          <label className="font-semibold">Choice</label>
-
-                          {/* loop here */}
-                          {
-                            newQuestion.choices.map((_data, i) => {
-                              return (
-                                <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                  <button type="button" className="p-2 font-bold text-lg">
-                                    <AiOutlineBars />
-                                  </button>
-                                  <Input size="large"
-                                    defaultValue={_data}
-                                    value={_data}
-                                    onChange={(e) => {
-                                      const newChoices = [...newQuestion.choices]
-                                      newChoices[i] = e.target.value
-                                      UpdateFieldOperation(data, {
-                                        choices: newChoices
-                                      })
-                                    }}
-                                  />
-                                  <button type="button" className="p-2 font-bold text-lg"
-                                    onClick={() => {
-                                      const newChoices = [...newQuestion.choices, ""]
-                                      UpdateFieldOperation(data, {
-                                        choices: newChoices
-                                      })
-                                    }}
-                                  >
-                                    <AiOutlinePlus />
-                                  </button>
-                                </div>
-                              )
-                            })
-                          }
-
-                          <div className="mt-3 flex gap-2 items-center">
-                            <Checkbox
-                              checked={newQuestion.other}
-                              onChange={(e) => {
-                                UpdateFieldOperation(data, {
-                                  other: e.target.checked
-                                })
-                              }}
-                            />
-                            <span className="font-light text-xs">Enable “Other” option </span>
-                          </div>
-
-                        </div>
-
-                      </>}
-
-                      {/* for Yes/No */}
-                      {data.type === "Yes/No" && <>
-
-                        <div className="mt-3">
-
-                          <div className="mt-3 flex gap-2 items-center">
-                            <Checkbox
-                              checked={newQuestion.disqualify}
-                              onChange={(e) => {
-                                UpdateFieldOperation(data, {
-                                  disqualify: e.target.checked
-                                })
-                              }}
-                            />
-                            <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
-                          </div>
-
-                        </div>
-
-                      </>}
-
-                      <div className="flex justify-between items-center py-4">
-                        <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
-                          onClick={() => DeleteQuestion()}
-                        >
-                          <AiOutlineClose className="text-textRed text-xl font-bold" />
-                          <span>Delete questions</span>
-                        </button>
-
-                        <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
-                          onClick={() => {
-                            // console.log("helooo", question);
-                            SaveUpdatedQuestion()
-                          }}
-                        >
-                          <span>Save</span>
-                        </button>
-
-                      </div>
-
-                    </form>
-                  }
-
-                </div>
-
-
-              )
-            })
-          }
-
-          {
-            selectedMenu === "customisedQuestions" &&
+            selectedMenu === "profile" &&
             < QuestionsComponent
               question={newQuestion}
               update={setNewQuestion}
@@ -1299,30 +613,69 @@ export default function ApplicationForm() {
               reset={ResetQuestion}
             />
           }
+        </>
 
+        <>
+          <AddQuestionButton
+            AddQuestion={AddQuestion}
+            selectedMenu={selectedMenu}
+            type="profile"
+          />
+        </>
+      </FormWrapper>
 
-          <div>
-            <button
-              onClick={() => AddQuestion("customisedQuestions")}
-              // onClick={() =>
-              //   ToggleUpdateQuestion(
-              //     payload.attributes.customisedQuestions.length + 1,
-              //     "customisedQuestions",
-              //     newQuestion
-              //   )
-              // }
-              className="flex items-center disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed gap-3 font-semibold p-4 rounded-b"
-              disabled={selectedMenu ? true : false}
+      <FormWrapper title="Additional questions">
+        <div>
 
-            >
-              <div>
-                <AiOutlinePlus className="text-xl" />
-              </div>
-              <div>
-                Add a question
-              </div>
-            </button>
-          </div>
+          <>
+            {
+              payload.attributes.customisedQuestions.length > 0 &&
+              payload.attributes.customisedQuestions.map((data, i) => {
+                return (
+                  <div key={i} className="border-b mt-4">
+                    <>
+                      <AdditionalQuestionsComponent
+                        ToggleUpdateQuestion={ToggleUpdateQuestion}
+                        data={data}
+                        index={i}
+                      />
+                    </>
+
+                    {
+                      (selectedIndex[0] === i && selectedIndex[1] === "customisedQuestions") &&
+                      <UpdateQuestionComponent
+                        DeleteQuestion={DeleteQuestion}
+                        SaveUpdatedQuestion={SaveUpdatedQuestion}
+                        UpdateFieldOperation={UpdateFieldOperation}
+                        data={data}
+                        newQuestion={newQuestion}
+                      />
+                    }
+                  </div>
+                )
+              })
+            }
+          </>
+
+          <>
+            {
+              selectedMenu === "customisedQuestions" &&
+              < QuestionsComponent
+                question={newQuestion}
+                update={setNewQuestion}
+                save={SaveQuestion}
+                reset={ResetQuestion}
+              />
+            }
+          </>
+
+          <>
+            <AddQuestionButton
+              AddQuestion={AddQuestion}
+              selectedMenu={selectedMenu}
+              type="customisedQuestions"
+            />
+          </>
 
         </div>
       </FormWrapper>
@@ -1338,238 +691,5 @@ export default function ApplicationForm() {
 
     </div>
   )
-}
-
-interface IQuestionComponent {
-  question: Question;
-  update: React.Dispatch<React.SetStateAction<Question>>;
-  save: Function;
-  reset: Function
-}
-
-function QuestionsComponent({ question, update, save, reset }: IQuestionComponent) {
-
-
-  return <>
-    {/* <FormWrapper title="Questions"> */}
-    <div className="mt-3">
-      <div>
-        <label className="font-semibold">Type</label>
-        <div className="mt-3">
-          <Select
-            defaultValue=""
-            style={{ width: "100%" }}
-            size="large"
-            value={question.type}
-            onChange={(e) => update({
-              ...defaultQuestion,
-              type: e
-            })}
-            options={QUESTIONS}
-          />
-        </div>
-      </div>
-
-      <div className="mt-3">
-        <label className="font-semibold">Question</label>
-        <div className="mt-3">
-          <Input
-            size="large"
-            value={question.question}
-            onChange={(e) => update({
-              ...question,
-              question: e.target.value
-            })}
-          />
-        </div>
-      </div>
-
-      {/* for multichoice */}
-      {question.type === "Multiple Choice" && <>
-
-        <div className="mt-3">
-          <label className="font-semibold">Choice</label>
-
-          {/* loop here */}
-          {
-            question.choices.map((data, i) => {
-              return (
-                <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                  <button type="button" className="p-2 font-bold text-lg">
-                    <AiOutlineBars />
-                  </button>
-                  <Input size="large"
-                    defaultValue={data}
-                    value={data}
-                    onChange={(e) => {
-                      const newChoices = [...question.choices]
-                      newChoices[i] = e.target.value
-                      update({
-                        ...question,
-                        choices: newChoices
-                      })
-                    }}
-                  />
-                  <button type="button" className="p-2 font-bold text-lg"
-                    onClick={() => {
-                      const newChoices = [...question.choices, ""]
-                      update({
-                        ...question,
-                        choices: newChoices
-                      })
-                    }}
-                  >
-                    <AiOutlinePlus />
-                  </button>
-                </div>
-              )
-            })
-          }
-
-          <div className="mt-3 flex gap-2 items-center">
-            <Checkbox
-              checked={question.other}
-              onChange={(e) => {
-                update({
-                  ...question,
-                  other: e.target.checked
-                })
-              }}
-            />
-            <span className="font-light text-xs">Enable “Other” option </span>
-          </div>
-
-        </div>
-
-
-        <div className="mt-3">
-          <div>
-            <label className="font-semibold">Max choice allowed</label>
-            <div className="mt-3">
-              <Input size="large"
-                defaultValue={question.maxChoice}
-                value={question.maxChoice}
-                onChange={(e) => {
-                  const { value } = e.target
-                  if (value !== "" && !testNumber(value)) {
-                    message.error("Only numbers are allowed in multiple choice")
-                  } else {
-                    update({
-                      ...question,
-                      maxChoice: Number(e.target.value || 0)
-                    })
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-        </div>
-      </>}
-
-      {/* for dropdown */}
-      {question.type === "Dropdown" && <>
-
-        <div className="mt-3">
-          <label className="font-semibold">Choice</label>
-
-          {/* loop here */}
-          {
-            question.choices.map((data, i) => {
-              return (
-                <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                  <button type="button" className="p-2 font-bold text-lg">
-                    <AiOutlineBars />
-                  </button>
-                  <Input size="large"
-                    defaultValue={data}
-                    value={data}
-                    onChange={(e) => {
-                      const newChoices = [...question.choices]
-                      newChoices[i] = e.target.value
-                      update({
-                        ...question,
-                        choices: newChoices
-                      })
-                    }}
-                  />
-                  <button type="button" className="p-2 font-bold text-lg"
-                    onClick={() => {
-                      const newChoices = [...question.choices, ""]
-                      update({
-                        ...question,
-                        choices: newChoices
-                      })
-                    }}
-                  >
-                    <AiOutlinePlus />
-                  </button>
-                </div>
-              )
-            })
-          }
-
-          <div className="mt-3 flex gap-2 items-center">
-            <Checkbox
-              checked={question.other}
-              onChange={(e) => {
-                update({
-                  ...question,
-                  other: e.target.checked
-                })
-              }}
-            />
-            <span className="font-light text-xs">Enable “Other” option </span>
-          </div>
-
-        </div>
-
-      </>}
-
-      {/* for Yes/No */}
-      {question.type === "Yes/No" && <>
-
-        <div className="mt-3">
-
-          <div className="mt-3 flex gap-2 items-center">
-            <Checkbox
-              checked={question.disqualify}
-              onChange={(e) => {
-                update({
-                  ...question,
-                  disqualify: e.target.checked
-                })
-              }}
-            />
-            <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
-          </div>
-
-        </div>
-
-      </>}
-
-      <div className="flex justify-between items-center py-4">
-        <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
-          onClick={() => reset()}
-        >
-          <AiOutlineClose className="text-textRed text-xl font-bold" />
-          <span>Delete questions</span>
-        </button>
-
-        <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
-          onClick={() => {
-            // console.log("helooo", question);
-            save()
-          }}
-        >
-          <span>Save</span>
-        </button>
-
-      </div>
-
-    </div>
-
-    {/* </FormWrapper> */}
-  </>
 }
 

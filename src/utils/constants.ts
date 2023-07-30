@@ -101,3 +101,13 @@ export function generateRandomId() {
 export function generateId() {
   return uuidv4();
 }
+
+export const defaultQuestion = {
+  "id": "",
+  "type": "",
+  "question": "",
+  "choices": [""],
+  "maxChoice": 0,
+  "disqualify": false,
+  "other": false
+}
