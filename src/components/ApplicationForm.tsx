@@ -41,68 +41,7 @@ export default function ApplicationForm() {
     "disqualify": false,
     "other": false
   })
-  const [payload, setPayload] = useState<IApplicationSchema>({
-    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
-    "type": "applicationForm",
-    "attributes": {
-      "coverImage": "",
-      "personalInformation": {
-        "firstName": {
-          "internalUse": false,
-          "show": true
-        },
-        "lastName": {
-          "internalUse": false,
-          "show": true
-        },
-        "emailId": {
-          "internalUse": false,
-          "show": true
-        },
-        "phoneNumber": {
-          "internalUse": false,
-          "show": true
-        },
-        "nationality": {
-          "internalUse": false,
-          "show": true
-        },
-        "currentResidence": {
-          "internalUse": false,
-          "show": true
-        },
-        "idNumber": {
-          "internalUse": false,
-          "show": true
-        },
-        "dateOfBirth": {
-          "internalUse": false,
-          "show": true
-        },
-        "gender": {
-          "internalUse": false,
-          "show": true
-        },
-        "personalQuestions": []
-      },
-      "profile": {
-        "education": {
-          "mandatory": true,
-          "show": true
-        },
-        "experience": {
-          "mandatory": true,
-          "show": true
-        },
-        "resume": {
-          "mandatory": true,
-          "show": true
-        },
-        "profileQuestions": []
-      },
-      "customisedQuestions": []
-    }
-  });
+  const [payload, setPayload] = useState<IApplicationSchema | null>(null);
 
   const PersonalInputs: IPersonalInput[] = [
     {
@@ -185,7 +124,7 @@ export default function ApplicationForm() {
   const handleFileChange = (event: UploadChangeParam<UploadFile<any>>) => {
     const file = event.file.originFileObj;
 
-    if (file && (file.size || 0) <= 1024 * 1024) {
+    if (payload && file && (file.size || 0) <= 1024 * 1024) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
@@ -227,6 +166,8 @@ export default function ApplicationForm() {
   }
 
   function SaveQuestion() {
+    if (!payload) return;
+
     switch (selectedMenu) {
       case "personalInformation":
         let _questions = payload.attributes[selectedMenu]?.personalQuestions
@@ -269,6 +210,7 @@ export default function ApplicationForm() {
   }
 
   function SaveUpdatedQuestion() {
+    if (!payload) return;
 
     switch (selectedIndex[1]) {
       case "personalInformation":
@@ -297,6 +239,8 @@ export default function ApplicationForm() {
   }
 
   function DeleteQuestion() {
+    if (!payload) return;
+
     switch (selectedIndex[1]) {
       case "personalInformation":
         const _questions = payload.attributes.personalInformation.personalQuestions
@@ -325,7 +269,7 @@ export default function ApplicationForm() {
   }
 
   function Validation() {
-    if (!payload.attributes.coverImage) {
+    if (payload && !payload.attributes.coverImage) {
       return "Please upload an image"
     }
     return
@@ -345,6 +289,7 @@ export default function ApplicationForm() {
   }
 
   async function handleSubmit() {
+    if (!payload) return;
 
     const validdate = Validation()
     if (validdate) {
