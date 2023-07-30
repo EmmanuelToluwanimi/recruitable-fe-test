@@ -5,6 +5,10 @@ export interface IPersonalInput {
   hasOptions: boolean
 }
 
+export interface IApplicationData {
+  data : IApplicationSchema
+}
+
 export interface IApplicationSchema {
   id: string;
   type: string;

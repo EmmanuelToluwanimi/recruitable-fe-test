@@ -5,34 +5,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FormWrapper from "./FormWrapper";
 import { AiOutlineBars, AiOutlineClose, AiOutlinePlus } from "react-icons/ai";
-import { Assets, QUESTIONS, generateId, generateRandomId, testNumber } from "../utils/constants";
-import { InboxOutlined } from '@ant-design/icons';
+import { Assets, QUESTIONS, generateId, testNumber } from "../utils/constants";
 import type { UploadFile, UploadProps } from 'antd';
-import React, { ChangeEvent, useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
 import { UploadChangeParam } from "antd/es/upload";
 
 
 import {
-  Button,
-  Cascader,
   Checkbox,
-  DatePicker,
-  Form,
   Input,
-  InputNumber,
-  Radio,
   Select,
-  Slider,
   Switch,
-  TreeSelect,
   Upload,
   message,
   Modal,
 
 } from 'antd';
 import { IApplicationSchema, IPersonalInput, Question } from "../interface";
-import { SubmitPayload } from "../services";
+import { GetApplicationSchemaPayload, SubmitPayload } from "../services";
+import LoadingScreen from "./LoadingScreen";
 
 const { Dragger } = Upload;
 
@@ -63,10 +54,9 @@ export default function ApplicationForm() {
     ResetQuestion();
   };
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedMenu, setSelectedMenu] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(0);
   const [selectedIndex, setselectedIndex] = useState<any[]>([]);
   const [newQuestion, setNewQuestion] = useState<Question>({
     "id": "",
@@ -218,12 +208,10 @@ export default function ApplicationForm() {
     },
   ]
 
-
   const handleFileChange = (event: UploadChangeParam<UploadFile<any>>) => {
     const file = event.file.originFileObj;
 
     if (file && (file.size || 0) <= 1024 * 1024) {
-      setSelectedFile(file || null);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
@@ -235,17 +223,14 @@ export default function ApplicationForm() {
       };
       reader.readAsDataURL(file);
     } else {
-      setSelectedFile(null);
       setPreviewUrl(null);
       message.error("File size must be less than or equal to 1MB.");
     }
   };
 
   function DeleteImage() {
-    setSelectedFile(null);
     setPreviewUrl(null);
   }
-
 
   const props: UploadProps = {
     name: 'file',
@@ -257,8 +242,10 @@ export default function ApplicationForm() {
   };
 
   function AddQuestion(key: string) {
-    showModal()
+    // showModal()
     setSelectedMenu(key)
+    // add new object to questions array here
+
   }
 
   function ResetQuestion() {
@@ -288,12 +275,14 @@ export default function ApplicationForm() {
       default:
         break;
     }
-    handleCancel()
+
+    ResetQuestion();
+    setSelectedMenu("");
   }
 
   function ToggleUpdateQuestion(i: number, category: string, data: Question) {
     setselectedIndex([i, category]);
-    setNewQuestion({ ...data });
+    setNewQuestion({ ...data, id: data.id ? data.id : generateId() });
   }
 
   function ResetSelectedIndex() {
@@ -358,6 +347,15 @@ export default function ApplicationForm() {
     }
     ResetSelectedIndex()
     ResetQuestion();
+    setSelectedMenu("");
+  }
+
+  function FilterQuestions(questions: Question[], type: boolean) {
+    if (type === true) {
+      return questions.filter(data => data.id !== "");
+    } else {
+      return questions.filter(data => data.id === "");
+    }
   }
 
   function Validation() {
@@ -367,6 +365,19 @@ export default function ApplicationForm() {
     return
   }
 
+  async function FetchApplicationSchema(abortController: AbortController) {
+    setLoading(1);
+    try {
+      const response = await GetApplicationSchemaPayload(abortController);
+      console.log("payload", response);
+
+      setPayload(response);
+    } catch (error) {
+      message.error("Error occured while fetching data.")
+    }
+    setLoading(0);
+  }
+
   async function handleSubmit() {
 
     const validdate = Validation()
@@ -374,7 +385,7 @@ export default function ApplicationForm() {
       return message.error(validdate);
     }
 
-    setLoading(true);
+    setLoading(2);
     try {
       const res = await SubmitPayload(payload);
       message.success("Data updated succesfully");
@@ -383,15 +394,36 @@ export default function ApplicationForm() {
     } catch (error: any) {
       message.error("Oops, operation failed")
     }
-    setLoading(false);
+    setLoading(0);
   }
 
+  useEffect(() => {
+    const abortController = new AbortController();
+    FetchApplicationSchema(abortController)
+
+    return () => {
+      abortController.abort;
+    }
+  }, [])
+
+
+  if (!payload) {
+    return <></>
+  }
+
+  if (loading === 1) {
+    return <LoadingScreen />
+  }
+
+  /**
+   * @todo: duplicate update to the rest and componentize update ui;
+   */
 
   return (
     <div className="px-10">
 
       {/* modal */}
-      <>
+      {/* <>
         <Modal title="Modal" footer={null} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
           <div className="flex justify-center">
             <QuestionsComponent
@@ -402,7 +434,7 @@ export default function ApplicationForm() {
             />
           </div>
         </Modal>
-      </>
+      </> */}
 
       {/* coverimag */}
       <>
@@ -718,6 +750,15 @@ export default function ApplicationForm() {
           })
         }
 
+        {/* {
+          <QuestionsComponent
+            question={newQuestion}
+            update={setNewQuestion}
+            save={SaveQuestion}
+            reset={ResetQuestion}
+          />
+        } */}
+
         <div
           onClick={() => AddQuestion("personalInformation")}
           className="flex items-center gap-3 font-semibold pt-6 pb-4 rounded-b" role="button">
@@ -1024,7 +1065,7 @@ export default function ApplicationForm() {
           {
             payload.attributes.customisedQuestions.length > 0 &&
             payload.attributes.customisedQuestions.map((data, i) => {
-              return <>
+              return (
                 <div key={i} className="border-b mt-4">
                   <div className="font-light text-xs">{data.type}</div>
                   <div className="font-semibold pt-2 pb-6 flex justify-between items-center">
@@ -1033,238 +1074,265 @@ export default function ApplicationForm() {
                       <img src={Assets.pen} alt="pen" />
                     </div>
                   </div>
-                </div>
 
-                {
-                  (selectedIndex[0] === i && selectedIndex[1] === "customisedQuestions") &&
-                  <form className="mt-4">
-                    <div>
-                      <label className="font-semibold">Type</label>
-                      <div className="mt-3">
-                        <Select
-                          defaultValue=""
-                          style={{ width: "100%" }}
-                          size="large"
-                          value={newQuestion.type}
-                          onChange={(e) => {
-                            UpdateFieldOperation(data, { type: e })
-                          }}
-                          options={QUESTIONS}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <label className="font-semibold">Question</label>
-                      <div className="mt-3">
-                        <Input
-                          size="large"
-                          value={newQuestion.question}
-                          onChange={(e) => UpdateFieldOperation(data, { question: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    {/* for multichoice */}
-                    {data.type === "Multiple Choice" && <>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Choice</label>
-
-                        {/* loop here */}
-                        {
-                          newQuestion.choices.map((_data, i) => {
-                            return (
-                              <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                <button type="button" className="p-2 font-bold text-lg">
-                                  <AiOutlineBars />
-                                </button>
-                                <Input size="large"
-                                  defaultValue={_data}
-                                  value={_data}
-                                  onChange={(e) => {
-                                    const newChoices = [...newQuestion.choices]
-                                    newChoices[i] = e.target.value
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                />
-                                <button type="button" className="p-2 font-bold text-lg"
-                                  onClick={() => {
-                                    const newChoices = [...data.choices, ""]
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                >
-                                  <AiOutlinePlus />
-                                </button>
-                              </div>
-                            )
-                          })
-                        }
-
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.other}
+                  {
+                    (selectedIndex[0] === i && selectedIndex[1] === "customisedQuestions") &&
+                    <form className="">
+                      <div>
+                        <label className="font-semibold">Type</label>
+                        <div className="mt-3">
+                          <Select
+                            defaultValue=""
+                            style={{ width: "100%" }}
+                            size="large"
+                            value={newQuestion.type}
                             onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                other: e.target.checked
-                              })
+                              UpdateFieldOperation(data, { type: e })
                             }}
+                            options={QUESTIONS}
                           />
-                          <span className="font-light text-xs">Enable “Other” option </span>
                         </div>
-
                       </div>
 
-
                       <div className="mt-3">
-                        <div>
-                          <label className="font-semibold">Max choice allowed</label>
-                          <div className="mt-3">
-                            <Input size="large"
-                              defaultValue={newQuestion.maxChoice}
-                              value={newQuestion.maxChoice}
+                        <label className="font-semibold">Question</label>
+                        <div className="mt-3">
+                          <Input
+                            size="large"
+                            value={newQuestion.question}
+                            onChange={(e) => UpdateFieldOperation(data, { question: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* for multichoice */}
+                      {data.type === "Multiple Choice" && <>
+
+                        <div className="mt-3">
+                          <label className="font-semibold">Choice</label>
+
+                          {/* loop here */}
+                          {
+                            newQuestion.choices.map((_data, i) => {
+                              return (
+                                <div key={i} className="mt-3 flex items-center justify-between gap-2">
+                                  <button type="button" className="p-2 font-bold text-lg">
+                                    <AiOutlineBars />
+                                  </button>
+                                  <Input size="large"
+                                    defaultValue={_data}
+                                    value={_data}
+                                    onChange={(e) => {
+                                      const newChoices = [...newQuestion.choices]
+                                      newChoices[i] = e.target.value
+                                      UpdateFieldOperation(data, {
+                                        choices: newChoices
+                                      })
+                                    }}
+                                  />
+                                  <button type="button" className="p-2 font-bold text-lg"
+                                    onClick={() => {
+                                      const newChoices = [...data.choices, ""]
+                                      UpdateFieldOperation(data, {
+                                        choices: newChoices
+                                      })
+                                    }}
+                                  >
+                                    <AiOutlinePlus />
+                                  </button>
+                                </div>
+                              )
+                            })
+                          }
+
+                          <div className="mt-3 flex gap-2 items-center">
+                            <Checkbox
+                              checked={newQuestion.other}
                               onChange={(e) => {
-                                const { value } = e.target
-                                if (value !== "" && !testNumber(value)) {
-                                  message.error("Only numbers are allowed in multiple choice")
-                                } else {
-                                  UpdateFieldOperation(data, {
-                                    maxChoice: Number(e.target.value || 0)
-                                  })
-                                }
+                                UpdateFieldOperation(data, {
+                                  other: e.target.checked
+                                })
                               }}
                             />
+                            <span className="font-light text-xs">Enable “Other” option </span>
                           </div>
+
                         </div>
 
-                      </div>
-                    </>}
 
-                    {/* for dropdown */}
-                    {data.type === "Dropdown" && <>
-
-                      <div className="mt-3">
-                        <label className="font-semibold">Choice</label>
-
-                        {/* loop here */}
-                        {
-                          newQuestion.choices.map((_data, i) => {
-                            return (
-                              <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                                <button type="button" className="p-2 font-bold text-lg">
-                                  <AiOutlineBars />
-                                </button>
-                                <Input size="large"
-                                  defaultValue={_data}
-                                  value={_data}
-                                  onChange={(e) => {
-                                    const newChoices = [...newQuestion.choices]
-                                    newChoices[i] = e.target.value
+                        <div className="mt-3">
+                          <div>
+                            <label className="font-semibold">Max choice allowed</label>
+                            <div className="mt-3">
+                              <Input size="large"
+                                defaultValue={newQuestion.maxChoice}
+                                value={newQuestion.maxChoice}
+                                onChange={(e) => {
+                                  const { value } = e.target
+                                  if (value !== "" && !testNumber(value)) {
+                                    message.error("Only numbers are allowed in multiple choice")
+                                  } else {
                                     UpdateFieldOperation(data, {
-                                      choices: newChoices
+                                      maxChoice: Number(e.target.value || 0)
                                     })
-                                  }}
-                                />
-                                <button type="button" className="p-2 font-bold text-lg"
-                                  onClick={() => {
-                                    const newChoices = [...newQuestion.choices, ""]
-                                    UpdateFieldOperation(data, {
-                                      choices: newChoices
-                                    })
-                                  }}
-                                >
-                                  <AiOutlinePlus />
-                                </button>
-                              </div>
-                            )
-                          })
-                        }
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
 
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.other}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                other: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Enable “Other” option </span>
                         </div>
+                      </>}
+
+                      {/* for dropdown */}
+                      {data.type === "Dropdown" && <>
+
+                        <div className="mt-3">
+                          <label className="font-semibold">Choice</label>
+
+                          {/* loop here */}
+                          {
+                            newQuestion.choices.map((_data, i) => {
+                              return (
+                                <div key={i} className="mt-3 flex items-center justify-between gap-2">
+                                  <button type="button" className="p-2 font-bold text-lg">
+                                    <AiOutlineBars />
+                                  </button>
+                                  <Input size="large"
+                                    defaultValue={_data}
+                                    value={_data}
+                                    onChange={(e) => {
+                                      const newChoices = [...newQuestion.choices]
+                                      newChoices[i] = e.target.value
+                                      UpdateFieldOperation(data, {
+                                        choices: newChoices
+                                      })
+                                    }}
+                                  />
+                                  <button type="button" className="p-2 font-bold text-lg"
+                                    onClick={() => {
+                                      const newChoices = [...newQuestion.choices, ""]
+                                      UpdateFieldOperation(data, {
+                                        choices: newChoices
+                                      })
+                                    }}
+                                  >
+                                    <AiOutlinePlus />
+                                  </button>
+                                </div>
+                              )
+                            })
+                          }
+
+                          <div className="mt-3 flex gap-2 items-center">
+                            <Checkbox
+                              checked={newQuestion.other}
+                              onChange={(e) => {
+                                UpdateFieldOperation(data, {
+                                  other: e.target.checked
+                                })
+                              }}
+                            />
+                            <span className="font-light text-xs">Enable “Other” option </span>
+                          </div>
+
+                        </div>
+
+                      </>}
+
+                      {/* for Yes/No */}
+                      {data.type === "Yes/No" && <>
+
+                        <div className="mt-3">
+
+                          <div className="mt-3 flex gap-2 items-center">
+                            <Checkbox
+                              checked={newQuestion.disqualify}
+                              onChange={(e) => {
+                                UpdateFieldOperation(data, {
+                                  disqualify: e.target.checked
+                                })
+                              }}
+                            />
+                            <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
+                          </div>
+
+                        </div>
+
+                      </>}
+
+                      <div className="flex justify-between items-center py-4">
+                        <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
+                          onClick={() => DeleteQuestion()}
+                        >
+                          <AiOutlineClose className="text-textRed text-xl font-bold" />
+                          <span>Delete questions</span>
+                        </button>
+
+                        <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
+                          onClick={() => {
+                            // console.log("helooo", question);
+                            SaveUpdatedQuestion()
+                          }}
+                        >
+                          <span>Save</span>
+                        </button>
 
                       </div>
 
-                    </>}
+                    </form>
+                  }
 
-                    {/* for Yes/No */}
-                    {data.type === "Yes/No" && <>
+                </div>
 
-                      <div className="mt-3">
 
-                        <div className="mt-3 flex gap-2 items-center">
-                          <Checkbox
-                            checked={newQuestion.disqualify}
-                            onChange={(e) => {
-                              UpdateFieldOperation(data, {
-                                disqualify: e.target.checked
-                              })
-                            }}
-                          />
-                          <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
-                        </div>
-
-                      </div>
-
-                    </>}
-
-                    <div className="flex justify-between items-center py-4">
-                      <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
-                        onClick={() => DeleteQuestion()}
-                      >
-                        <AiOutlineClose className="text-textRed text-xl font-bold" />
-                        <span>Delete questions</span>
-                      </button>
-
-                      <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
-                        onClick={() => {
-                          // console.log("helooo", question);
-                          SaveUpdatedQuestion()
-                        }}
-                      >
-                        <span>Save</span>
-                      </button>
-
-                    </div>
-
-                  </form>
-                }
-              </>
+              )
             })
           }
 
-          <div
-            onClick={() => AddQuestion("customisedQuestions")}
-            className="flex items-center gap-3 font-semibold pt-6 pb-4 rounded-b" role="button">
-            <div>
-              <AiOutlinePlus className="text-xl" />
-            </div>
-            <div>
-              Add a question
-            </div>
+          {
+            selectedMenu === "customisedQuestions" &&
+            < QuestionsComponent
+              question={newQuestion}
+              update={setNewQuestion}
+              save={SaveQuestion}
+              reset={ResetQuestion}
+            />
+          }
+
+
+          <div>
+            <button
+              onClick={() => AddQuestion("customisedQuestions")}
+              // onClick={() =>
+              //   ToggleUpdateQuestion(
+              //     payload.attributes.customisedQuestions.length + 1,
+              //     "customisedQuestions",
+              //     newQuestion
+              //   )
+              // }
+              className="flex items-center disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed gap-3 font-semibold p-4 rounded-b"
+              disabled={selectedMenu ? true : false}
+
+            >
+              <div>
+                <AiOutlinePlus className="text-xl" />
+              </div>
+              <div>
+                Add a question
+              </div>
+            </button>
           </div>
+
         </div>
       </FormWrapper>
 
       <div>
         <button className="px-6 py-3 w-[400px] my-6 bg-textBlue text-white rounded-lg disabled:opacity-50"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading === 2 ? true : false}
         >
-          {loading ? "Processing..." : "Submit Details"}
+          {loading === 2 ? "Processing..." : "Submit Details"}
         </button>
       </div>
 
@@ -1283,225 +1351,225 @@ function QuestionsComponent({ question, update, save, reset }: IQuestionComponen
 
 
   return <>
-    <FormWrapper title="Questions">
-      <form>
-        <div>
-          <label className="font-semibold">Type</label>
-          <div className="mt-3">
-            <Select
-              defaultValue=""
-              style={{ width: "100%" }}
-              size="large"
-              value={question.type}
-              onChange={(e) => update({
-                ...defaultQuestion,
-                type: e
-              })}
-              options={QUESTIONS}
-            />
-          </div>
+    {/* <FormWrapper title="Questions"> */}
+    <div className="mt-3">
+      <div>
+        <label className="font-semibold">Type</label>
+        <div className="mt-3">
+          <Select
+            defaultValue=""
+            style={{ width: "100%" }}
+            size="large"
+            value={question.type}
+            onChange={(e) => update({
+              ...defaultQuestion,
+              type: e
+            })}
+            options={QUESTIONS}
+          />
         </div>
+      </div>
+
+      <div className="mt-3">
+        <label className="font-semibold">Question</label>
+        <div className="mt-3">
+          <Input
+            size="large"
+            value={question.question}
+            onChange={(e) => update({
+              ...question,
+              question: e.target.value
+            })}
+          />
+        </div>
+      </div>
+
+      {/* for multichoice */}
+      {question.type === "Multiple Choice" && <>
 
         <div className="mt-3">
-          <label className="font-semibold">Question</label>
-          <div className="mt-3">
-            <Input
-              size="large"
-              value={question.question}
-              onChange={(e) => update({
-                ...question,
-                question: e.target.value
-              })}
-            />
-          </div>
-        </div>
+          <label className="font-semibold">Choice</label>
 
-        {/* for multichoice */}
-        {question.type === "Multiple Choice" && <>
-
-          <div className="mt-3">
-            <label className="font-semibold">Choice</label>
-
-            {/* loop here */}
-            {
-              question.choices.map((data, i) => {
-                return (
-                  <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                    <button type="button" className="p-2 font-bold text-lg">
-                      <AiOutlineBars />
-                    </button>
-                    <Input size="large"
-                      defaultValue={data}
-                      value={data}
-                      onChange={(e) => {
-                        const newChoices = [...question.choices]
-                        newChoices[i] = e.target.value
-                        update({
-                          ...question,
-                          choices: newChoices
-                        })
-                      }}
-                    />
-                    <button type="button" className="p-2 font-bold text-lg"
-                      onClick={() => {
-                        const newChoices = [...question.choices, ""]
-                        update({
-                          ...question,
-                          choices: newChoices
-                        })
-                      }}
-                    >
-                      <AiOutlinePlus />
-                    </button>
-                  </div>
-                )
-              })
-            }
-
-            <div className="mt-3 flex gap-2 items-center">
-              <Checkbox
-                checked={question.other}
-                onChange={(e) => {
-                  update({
-                    ...question,
-                    other: e.target.checked
-                  })
-                }}
-              />
-              <span className="font-light text-xs">Enable “Other” option </span>
-            </div>
-
-          </div>
-
-
-          <div className="mt-3">
-            <div>
-              <label className="font-semibold">Max choice allowed</label>
-              <div className="mt-3">
-                <Input size="large"
-                  defaultValue={question.maxChoice}
-                  value={question.maxChoice}
-                  onChange={(e) => {
-                    const { value } = e.target
-                    if (value !== "" && !testNumber(value)) {
-                      message.error("Only numbers are allowed in multiple choice")
-                    } else {
+          {/* loop here */}
+          {
+            question.choices.map((data, i) => {
+              return (
+                <div key={i} className="mt-3 flex items-center justify-between gap-2">
+                  <button type="button" className="p-2 font-bold text-lg">
+                    <AiOutlineBars />
+                  </button>
+                  <Input size="large"
+                    defaultValue={data}
+                    value={data}
+                    onChange={(e) => {
+                      const newChoices = [...question.choices]
+                      newChoices[i] = e.target.value
                       update({
                         ...question,
-                        maxChoice: Number(e.target.value || 0)
+                        choices: newChoices
                       })
-                    }
-                  }}
-                />
-              </div>
-            </div>
+                    }}
+                  />
+                  <button type="button" className="p-2 font-bold text-lg"
+                    onClick={() => {
+                      const newChoices = [...question.choices, ""]
+                      update({
+                        ...question,
+                        choices: newChoices
+                      })
+                    }}
+                  >
+                    <AiOutlinePlus />
+                  </button>
+                </div>
+              )
+            })
+          }
 
+          <div className="mt-3 flex gap-2 items-center">
+            <Checkbox
+              checked={question.other}
+              onChange={(e) => {
+                update({
+                  ...question,
+                  other: e.target.checked
+                })
+              }}
+            />
+            <span className="font-light text-xs">Enable “Other” option </span>
           </div>
-        </>}
-
-        {/* for dropdown */}
-        {question.type === "Dropdown" && <>
-
-          <div className="mt-3">
-            <label className="font-semibold">Choice</label>
-
-            {/* loop here */}
-            {
-              question.choices.map((data, i) => {
-                return (
-                  <div key={i} className="mt-3 flex items-center justify-between gap-2">
-                    <button type="button" className="p-2 font-bold text-lg">
-                      <AiOutlineBars />
-                    </button>
-                    <Input size="large"
-                      defaultValue={data}
-                      value={data}
-                      onChange={(e) => {
-                        const newChoices = [...question.choices]
-                        newChoices[i] = e.target.value
-                        update({
-                          ...question,
-                          choices: newChoices
-                        })
-                      }}
-                    />
-                    <button type="button" className="p-2 font-bold text-lg"
-                      onClick={() => {
-                        const newChoices = [...question.choices, ""]
-                        update({
-                          ...question,
-                          choices: newChoices
-                        })
-                      }}
-                    >
-                      <AiOutlinePlus />
-                    </button>
-                  </div>
-                )
-              })
-            }
-
-            <div className="mt-3 flex gap-2 items-center">
-              <Checkbox
-                checked={question.other}
-                onChange={(e) => {
-                  update({
-                    ...question,
-                    other: e.target.checked
-                  })
-                }}
-              />
-              <span className="font-light text-xs">Enable “Other” option </span>
-            </div>
-
-          </div>
-
-        </>}
-
-        {/* for Yes/No */}
-        {question.type === "Yes/No" && <>
-
-          <div className="mt-3">
-
-            <div className="mt-3 flex gap-2 items-center">
-              <Checkbox
-                checked={question.disqualify}
-                onChange={(e) => {
-                  update({
-                    ...question,
-                    disqualify: e.target.checked
-                  })
-                }}
-              />
-              <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
-            </div>
-
-          </div>
-
-        </>}
-
-        <div className="flex justify-between items-center py-4">
-          <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
-            onClick={() => reset()}
-          >
-            <AiOutlineClose className="text-textRed text-xl font-bold" />
-            <span>Delete questions</span>
-          </button>
-
-          <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
-            onClick={() => {
-              // console.log("helooo", question);
-              save()
-            }}
-          >
-            <span>Save</span>
-          </button>
 
         </div>
 
-      </form>
 
-    </FormWrapper>
+        <div className="mt-3">
+          <div>
+            <label className="font-semibold">Max choice allowed</label>
+            <div className="mt-3">
+              <Input size="large"
+                defaultValue={question.maxChoice}
+                value={question.maxChoice}
+                onChange={(e) => {
+                  const { value } = e.target
+                  if (value !== "" && !testNumber(value)) {
+                    message.error("Only numbers are allowed in multiple choice")
+                  } else {
+                    update({
+                      ...question,
+                      maxChoice: Number(e.target.value || 0)
+                    })
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+        </div>
+      </>}
+
+      {/* for dropdown */}
+      {question.type === "Dropdown" && <>
+
+        <div className="mt-3">
+          <label className="font-semibold">Choice</label>
+
+          {/* loop here */}
+          {
+            question.choices.map((data, i) => {
+              return (
+                <div key={i} className="mt-3 flex items-center justify-between gap-2">
+                  <button type="button" className="p-2 font-bold text-lg">
+                    <AiOutlineBars />
+                  </button>
+                  <Input size="large"
+                    defaultValue={data}
+                    value={data}
+                    onChange={(e) => {
+                      const newChoices = [...question.choices]
+                      newChoices[i] = e.target.value
+                      update({
+                        ...question,
+                        choices: newChoices
+                      })
+                    }}
+                  />
+                  <button type="button" className="p-2 font-bold text-lg"
+                    onClick={() => {
+                      const newChoices = [...question.choices, ""]
+                      update({
+                        ...question,
+                        choices: newChoices
+                      })
+                    }}
+                  >
+                    <AiOutlinePlus />
+                  </button>
+                </div>
+              )
+            })
+          }
+
+          <div className="mt-3 flex gap-2 items-center">
+            <Checkbox
+              checked={question.other}
+              onChange={(e) => {
+                update({
+                  ...question,
+                  other: e.target.checked
+                })
+              }}
+            />
+            <span className="font-light text-xs">Enable “Other” option </span>
+          </div>
+
+        </div>
+
+      </>}
+
+      {/* for Yes/No */}
+      {question.type === "Yes/No" && <>
+
+        <div className="mt-3">
+
+          <div className="mt-3 flex gap-2 items-center">
+            <Checkbox
+              checked={question.disqualify}
+              onChange={(e) => {
+                update({
+                  ...question,
+                  disqualify: e.target.checked
+                })
+              }}
+            />
+            <span className="font-light text-xs">Disqualify candidate if the answer is no </span>
+          </div>
+
+        </div>
+
+      </>}
+
+      <div className="flex justify-between items-center py-4">
+        <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
+          onClick={() => reset()}
+        >
+          <AiOutlineClose className="text-textRed text-xl font-bold" />
+          <span>Delete questions</span>
+        </button>
+
+        <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
+          onClick={() => {
+            // console.log("helooo", question);
+            save()
+          }}
+        >
+          <span>Save</span>
+        </button>
+
+      </div>
+
+    </div>
+
+    {/* </FormWrapper> */}
   </>
 }
 
