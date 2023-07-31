@@ -196,7 +196,7 @@ export default function ApplicationForm() {
   }
 
   function UpdateFieldOperation(data: Question, value: any) {
-    
+
     if (Object.keys(value).includes("type")) {
       const placeholder = { ...data, ...value };
       setNewQuestion(placeholder);
@@ -377,7 +377,7 @@ export default function ApplicationForm() {
                       {data.subtext && <div className="font-thin text-xs">{data.subtext}</div>}
                     </div>
                     {
-                      data.hasOptions && <div className="flex gap-3 items-center">
+                      data.hasOptions && <div className="flex gap-3 w-[170px] items-center">
 
                         <div className="flex gap-2 items-center">
                           <Checkbox
@@ -482,7 +482,7 @@ export default function ApplicationForm() {
                       <div className="font-semibold ">{data.name}</div>
                       {data.subtext && <div className="font-thin text-xs">{data.subtext}</div>}
                     </div>
-                    {data.hasOptions && <div className="flex gap-3 items-center">
+                    {data.hasOptions && <div className="flex gap-3 w-[190px] items-center">
                       {/* <img src={Assets.pen} alt="pen" /> */}
                       <div className="flex gap-2 items-center">
                         <Checkbox
