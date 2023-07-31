@@ -1,8 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Checkbox, Input, Select, message } from "antd";
 import { QUESTIONS, defaultQuestion, testNumber } from "../utils/constants";
-import { AiOutlineBars, AiOutlineClose, AiOutlinePlus } from "react-icons/ai";
+import { AiFillCaretDown, AiOutlineBars, AiOutlineClose, AiOutlinePlus } from "react-icons/ai";
 import { Question } from "../interface";
+import { TimePicker } from 'antd';
+
+const { TextArea } = Input;
+const format = 'HH:mm';
 
 interface IQuestionComponent {
   question: Question;
@@ -40,6 +44,9 @@ export default function QuestionsComponent({ question, update, save, reset, last
         <div className="mt-3">
           <Input
             size="large"
+            placeholder={
+              question.type === "VideoQuestion" ? "Q: Tell us about yourself?" : "Type here"
+            }
             value={question.question}
             onChange={(e) => update({
               ...question,
@@ -213,6 +220,34 @@ export default function QuestionsComponent({ question, update, save, reset, last
 
       </>}
 
+      {question.type === "VideoQuestion" && <>
+        <div className="mt-3">
+
+          <div className="mt-3">
+            <TextArea
+              placeholder="Please talk about your achievements, goals and what you worked on as the latest project."
+              style={{ height: 120, marginBottom: 24 }}
+            />
+          </div>
+
+          <div className="mt-3 flex gap-2 justify-between items-center">
+
+            <div className="w-[65%]">
+              <Input
+                placeholder="Max duration of video"
+                size="large"
+              />
+            </div>
+
+            <div className="flex-grow">
+              <TimePicker size="large" placeholder="in (sec/min)" format={format} nextIcon={<AiFillCaretDown />} />
+            </div>
+          </div>
+
+        </div>
+
+      </>}
+
       <div className="flex justify-between items-center py-4">
         <button type="button" className="text-textRed font-semibold hover:bg-gray-200 flex gap-2 items-center p-2 rounded-lg"
           onClick={() => reset()}
@@ -231,6 +266,16 @@ export default function QuestionsComponent({ question, update, save, reset, last
         </button>
 
       </div>
+
+      {question.type === "VideoQuestion" && <div>
+        <button
+          className="flex items-center text-[#A220CF] disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed gap-3 font-semibold p-4 rounded-b"
+        >
+          <div>
+            + Add video interview questions
+          </div>
+        </button>
+      </div>}
 
     </div>
 
