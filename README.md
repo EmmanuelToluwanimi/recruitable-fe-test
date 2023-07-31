@@ -28,3 +28,6 @@ yarn
 ```
 
 - Configure the mock server api endpoints in this file `/src/services/index.ts` :
+
+- To visit the UI section, click on the home icon on the sidebar of the Application dashboard.
+- To navigate back to the Application dashboard from the UI screen, click on the left arrow button on the sidebar.
