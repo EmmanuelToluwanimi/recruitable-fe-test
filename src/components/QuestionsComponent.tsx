@@ -13,7 +13,7 @@ interface IQuestionComponent {
   update: React.Dispatch<React.SetStateAction<Question>>;
   save: Function;
   reset: Function;
-  lastIndex: number
+  lastIndex?: number
 }
 
 export default function QuestionsComponent({ question, update, save, reset, lastIndex }: IQuestionComponent) {

@@ -185,7 +185,6 @@ export default function ApplicationForm() {
     !no_reset && ResetQuestion();
   }
 
-
   function ToggleUpdateQuestion(i: number, category: string, data: Question) {
     setselectedIndex([i, category]);
     setNewQuestion({ ...data, id: data.id ? data.id : generateId() });
@@ -321,9 +320,7 @@ export default function ApplicationForm() {
   }, [])
 
 
-  if (!payload) {
-    return <></>
-  }
+  
 
   if (loading === 1) {
     return <LoadingScreen />
@@ -335,10 +332,10 @@ export default function ApplicationForm() {
       {/* coverimag */}
       <>
         {
-          payload.attributes.coverImage || previewUrl ? <div className="rounded-lg mb-8 w-[400px] shadow">
+          payload?.attributes.coverImage || previewUrl ? <div className="rounded-lg mb-8 w-[400px] shadow">
             <div className="w-full h-[250px]">
               <img src={
-                payload.attributes.coverImage || previewUrl
+                payload?.attributes.coverImage || previewUrl
               } className="w-full h-full object-cover object-center rounded-t-lg" alt="dummy" />
             </div>
 
@@ -387,8 +384,11 @@ export default function ApplicationForm() {
 
                         <div className="flex gap-2 items-center">
                           <Checkbox
-                            value={payload.attributes.personalInformation[data.value]?.internalUse}
+                            value={payload?.attributes.personalInformation[data.value]?.internalUse}
                             onChange={(e) => {
+                              if (!payload) {
+                                return;
+                              }
                               const newObj = { ...payload }
                               newObj.attributes.personalInformation[data.value].internalUse = e.target.checked;
                               setPayload(newObj);
@@ -401,15 +401,16 @@ export default function ApplicationForm() {
 
                         <div className="flex gap-2 items-center">
                           <Switch className="shadow"
-                            checked={payload.attributes.personalInformation[data.value]?.show}
+                            checked={payload?.attributes.personalInformation[data.value]?.show}
                             onChange={(e) => {
+                              if(!payload) return;
                               const newObj = { ...payload }
                               newObj.attributes.personalInformation[data.value].show = e;
                               setPayload(newObj);
                             }}
                           />
                           <div>
-                            {payload.attributes.personalInformation[data.value]?.show ? "show" : "hide"}
+                            {payload?.attributes.personalInformation[data.value]?.show ? "show" : "hide"}
                           </div>
                         </div>
                       </div>
@@ -424,8 +425,8 @@ export default function ApplicationForm() {
 
         {/* additional questions */}
         {
-          payload.attributes.personalInformation.personalQuestions.length > 0 &&
-          payload.attributes.personalInformation.personalQuestions.map((data, i) => {
+          payload && payload.attributes.personalInformation.personalQuestions.length > 0 &&
+          payload?.attributes.personalInformation.personalQuestions.map((data, i) => {
             return (
               <>
                 <div key={i} className="border-b mt-4">
@@ -463,7 +464,7 @@ export default function ApplicationForm() {
               update={setNewQuestion}
               save={SaveQuestion}
               reset={ResetQuestion}
-              lastIndex={payload.attributes.personalInformation.personalQuestions.length}
+              lastIndex={payload?.attributes.personalInformation.personalQuestions.length}
             />
           }
         </>
@@ -492,8 +493,9 @@ export default function ApplicationForm() {
                       {/* <img src={Assets.pen} alt="pen" /> */}
                       <div className="flex gap-2 items-center">
                         <Checkbox
-                          value={payload.attributes.profile[data.value]?.mandatory}
+                          value={payload?.attributes.profile[data.value]?.mandatory}
                           onChange={(e) => {
+                            if(!payload) return;
                             const newObj = { ...payload }
                             newObj.attributes.profile[data.value].mandatory = e.target.checked;
                             setPayload(newObj);
@@ -506,15 +508,16 @@ export default function ApplicationForm() {
 
                       <div className="flex gap-2 items-center">
                         <Switch className="shadow"
-                          checked={payload.attributes.profile[data.value]?.show}
+                          checked={payload?.attributes.profile[data.value]?.show}
                           onChange={(e) => {
+                            if(!payload) return;
                             const newObj = { ...payload }
                             newObj.attributes.profile[data.value].show = e;
                             setPayload(newObj);
                           }}
                         />
                         <div>
-                          {payload.attributes.profile[data.value]?.show ? "show" : "hide"}
+                          {payload?.attributes.profile[data.value]?.show ? "show" : "hide"}
                         </div>
                       </div>
                     </div>}
@@ -526,7 +529,7 @@ export default function ApplicationForm() {
         </div>
 
         {
-          payload.attributes.profile.profileQuestions.length > 0 &&
+          payload && payload.attributes.profile.profileQuestions.length > 0 &&
           payload.attributes.profile.profileQuestions.map((data, i) => {
             return (
               <>
@@ -564,7 +567,7 @@ export default function ApplicationForm() {
               update={setNewQuestion}
               save={SaveQuestion}
               reset={ResetQuestion}
-              lastIndex={payload.attributes.personalInformation.profileQuestions.length}
+              lastIndex={payload?.attributes.personalInformation.profileQuestions.length}
             />
           }
         </>
@@ -583,7 +586,7 @@ export default function ApplicationForm() {
 
           <>
             {
-              payload.attributes.customisedQuestions.length > 0 &&
+              payload && payload.attributes.customisedQuestions.length > 0 &&
               payload.attributes.customisedQuestions.map((data, i) => {
                 return (
                   <div key={i} className="border-b mt-4">
@@ -620,7 +623,7 @@ export default function ApplicationForm() {
                 update={setNewQuestion}
                 save={SaveQuestion}
                 reset={ResetQuestion}
-                lastIndex={payload.attributes.customisedQuestions.length}
+                lastIndex={payload?.attributes.customisedQuestions.length}
               />
             }
           </>
