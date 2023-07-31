@@ -55,16 +55,16 @@ export const QUESTIONS = [
     value: "Paragraph", label: "Paragraph"
   },
   {
-    value: "Short Answer", label: "Short Answer"
+    value: "ShortAnswer", label: "ShortAnswer"
   },
   {
-    value: "Yes/No", label: "Yes/No"
+    value: "YesNo", label: "YesNo"
   },
   {
     value: "Dropdown", label: "Dropdown"
   },
   {
-    value: "Multiple Choice", label: "Multiple Choice"
+    value: "MultipleChoice", label: "MultipleChoice"
   },
   {
     value: "Date", label: "Date"
@@ -73,12 +73,15 @@ export const QUESTIONS = [
     value: "Number", label: "Number"
   },
   {
-    value: "File upload", label: "File upload"
+    value: "FileUpload", label: "FileUpload"
   },
   {
-    value: "Video question", label: "Video question"
-  }
+    value: "VideoQuestion", label: "VideoQuestion"
+  },
+  
 ]
+
+// const questionTypes = ["Paragraph", "ShortAnswer", "YesNo", "Dropdown", "MultipleChoice", "Date", "Number", "FileUpload"]
 
 export function testNumber(params: any) {
   const regex = /^\d+$/;

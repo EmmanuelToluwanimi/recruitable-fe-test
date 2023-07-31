@@ -50,7 +50,7 @@ export default function QuestionsComponent({ question, update, save, reset, last
       </div>
 
       {/* for multichoice */}
-      {question.type === "Multiple Choice" && <>
+      {question.type === "MultipleChoice" && <>
 
         <div className="mt-3">
           <label className="font-semibold">Choice</label>
@@ -192,7 +192,7 @@ export default function QuestionsComponent({ question, update, save, reset, last
       </>}
 
       {/* for Yes/No */}
-      {question.type === "Yes/No" && <>
+      {question.type === "YesNo" && <>
 
         <div className="mt-3">
 
@@ -224,7 +224,7 @@ export default function QuestionsComponent({ question, update, save, reset, last
         <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
           onClick={() => {
             // console.log("helooo", question);
-            save(lastIndex + 1)
+            save(lastIndex)
           }}
         >
           <span>Save</span>

@@ -301,10 +301,9 @@ export default function ApplicationForm() {
 
     setLoading(2);
     try {
-      const response = await SubmitPayload(payload);
+      await SubmitPayload(payload);
       message.success("Data updated succesfully");
       // console.log("res", response);
-      setPayload(response);
 
     } catch (error: any) {
       message.error("Oops, operation failed")

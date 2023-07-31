@@ -50,7 +50,7 @@ export default function UpdateQuestionComponent({
       </div>
 
       {/* for multichoice */}
-      {data.type === "Multiple Choice" && <>
+      {data.type === "MultipleChoice" && <>
 
         <div className="mt-3">
           <label className="font-semibold">Choice</label>
@@ -76,7 +76,7 @@ export default function UpdateQuestionComponent({
                   />
                   <button type="button" className="p-2 font-bold text-lg"
                     onClick={() => {
-                      const newChoices = [...data.choices, ""]
+                      const newChoices = [...newQuestion.choices, ""]
                       UpdateFieldOperation(data, {
                         choices: newChoices
                       })
@@ -185,7 +185,7 @@ export default function UpdateQuestionComponent({
       </>}
 
       {/* for Yes/No */}
-      {data.type === "Yes/No" && <>
+      {data.type === "YesNo" && <>
 
         <div className="mt-3">
 
