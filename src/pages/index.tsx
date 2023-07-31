@@ -16,7 +16,9 @@ export default function Dashboad() {
             backgroundColor: "white"
           }}
         >
-          <DashboardSidebar />
+          <div className='sticky top-0'>
+            <DashboardSidebar />
+          </div>
           <Content>
             <section className='bg-white'>
               <DashboardTopbar />

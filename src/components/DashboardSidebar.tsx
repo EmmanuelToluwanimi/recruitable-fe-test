@@ -12,9 +12,12 @@ export default function DashboardSidebar() {
       style={{
         backgroundColor: "white",
         padding: "20px 10px",
-        height: "1000px"
+        height: "100vh",
+        position: "sticky",
+        top: "0px",
+        left: "0px",
       }}
-      className='custom-shadow border'
+      className='custom-shadow'
     >
 
       <div className=" h-full flex flex-col items-center">

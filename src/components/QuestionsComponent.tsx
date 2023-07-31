@@ -8,10 +8,11 @@ interface IQuestionComponent {
   question: Question;
   update: React.Dispatch<React.SetStateAction<Question>>;
   save: Function;
-  reset: Function
+  reset: Function;
+  lastIndex: number
 }
 
-export default function QuestionsComponent({ question, update, save, reset }: IQuestionComponent) {
+export default function QuestionsComponent({ question, update, save, reset, lastIndex }: IQuestionComponent) {
 
 
   return <>
@@ -223,7 +224,7 @@ export default function QuestionsComponent({ question, update, save, reset }: IQ
         <button type="button" className="text-white bg-bgGreen font-semibold px-3 py-2 rounded-lg"
           onClick={() => {
             // console.log("helooo", question);
-            save()
+            save(lastIndex + 1)
           }}
         >
           <span>Save</span>

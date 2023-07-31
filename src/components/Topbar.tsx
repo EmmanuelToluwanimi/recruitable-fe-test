@@ -117,7 +117,7 @@ export default function Topbar() {
       {/* @todo: apply overlay or opacity here */}
 
       <div className='flex justify-between flex-grow'>
-        <div className='bg-white px-3 py-2 shadow-md rounded-2xl relative w-[321px] z-10'
+        <div className='bg-white px-3 py-2 shadow rounded-2xl relative w-[321px] z-10'
           onMouseEnter={handleHover}
           onMouseLeave={handleHoverLeave}
         >

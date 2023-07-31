@@ -30,7 +30,7 @@ export default function FilterSection() {
         }
       />
 
-      <div className="bg-white rounded-lg mt-10 shadow">
+      <div className="bg-white rounded-lg mt-10">
         <div className="flex justify-between p-4 rounded-t-lg">
           <div className="font-md">Filters</div>
           <div className="font-light text-xs">0 selected</div>

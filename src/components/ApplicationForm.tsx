@@ -15,7 +15,7 @@ import {
   Upload,
   message,
 } from 'antd';
-import { IApplicationSchema, IPersonalInput, Question } from "../interface";
+import { IApplicationSchema, IPersonalInput, IUpdateLogic, Question } from "../interface";
 import { GetApplicationSchemaPayload, SubmitPayload } from "../services";
 import LoadingScreen from "./LoadingScreen";
 import AdditionalQuestionsComponent from "./AdditionalQuestionsComponent";
@@ -27,9 +27,8 @@ const { Dragger } = Upload;
 
 export default function ApplicationForm() {
 
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedMenu, setSelectedMenu] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [selectedMenu, setSelectedMenu] = useState<string>("");
   const [loading, setLoading] = useState(0);
   const [selectedIndex, setselectedIndex] = useState<any[]>([]);
   const [newQuestion, setNewQuestion] = useState<Question>({
@@ -136,13 +135,18 @@ export default function ApplicationForm() {
       };
       reader.readAsDataURL(file);
     } else {
-      setPreviewUrl(null);
+      setPreviewUrl("");
       message.error("File size must be less than or equal to 1MB.");
     }
   };
 
   function DeleteImage() {
-    setPreviewUrl(null);
+    setPreviewUrl("");
+
+    if (!payload) return;
+    const newObj = { ...payload }
+    newObj.attributes.coverImage = "";
+    setPayload(newObj);
   }
 
   const props: UploadProps = {
@@ -155,45 +159,32 @@ export default function ApplicationForm() {
   };
 
   function AddQuestion(key: string) {
-    // showModal()
     setSelectedMenu(key)
-    // add new object to questions array here
-
   }
 
   function ResetQuestion() {
     setNewQuestion(defaultQuestion);
-  }
-
-  function SaveQuestion() {
-    if (!payload) return;
-
-    switch (selectedMenu) {
-      case "personalInformation":
-        let _questions = payload.attributes[selectedMenu]?.personalQuestions
-        _questions = [..._questions, { ...newQuestion, id: generateId() }];
-        payload.attributes[selectedMenu].personalQuestions = _questions;
-        setPayload(payload);
-        break;
-      case "profile":
-        let _questions2 = payload.attributes[selectedMenu]?.profileQuestions
-        _questions2 = [..._questions2, { ...newQuestion, id: generateId() }];
-        payload.attributes[selectedMenu].profileQuestions = _questions2;
-        setPayload(payload);
-        break;
-      case "customisedQuestions":
-        let _questions3 = payload.attributes[selectedMenu]
-        _questions3 = [..._questions3, { ...newQuestion, id: generateId() }];
-        payload.attributes[selectedMenu] = _questions3;
-        setPayload(payload);
-        break;
-      default:
-        break;
-    }
-
-    ResetQuestion();
     setSelectedMenu("");
+    ResetSelectedIndex()
   }
+
+  function UpdateLogic({ data, index, key, isDelete, no_reset }: IUpdateLogic) {
+    if (!payload) return;
+    let _questions;
+
+    if (key === "customisedQuestions") {
+      _questions = payload.attributes[key]
+      isDelete ? _questions.splice(index, 1) : _questions[index] = data;
+      payload.attributes[key] = _questions;
+    } else {
+      _questions = payload.attributes[key][GetQuestionKey(key)]
+      isDelete ? _questions.splice(index, 1) : _questions[index] = data;
+      payload.attributes[key][GetQuestionKey(key)] = _questions;
+    }
+    setPayload(payload);
+    !no_reset && ResetQuestion();
+  }
+
 
   function ToggleUpdateQuestion(i: number, category: string, data: Question) {
     setselectedIndex([i, category]);
@@ -204,68 +195,73 @@ export default function ApplicationForm() {
     setselectedIndex([]);
   }
 
-  function UpdateFieldOperation(data: Question, value: {}) {
-    const placeholder = { ...data, ...value };
-    setNewQuestion(placeholder);
+  function UpdateFieldOperation(data: Question, value: any) {
+    
+    if (Object.keys(value).includes("type")) {
+      const placeholder = { ...data, ...value };
+      setNewQuestion(placeholder);
+      UpdateLogic({
+        data: placeholder,
+        index: selectedIndex[0],
+        key: selectedIndex[1],
+        isDelete: false,
+        no_reset: true
+      })
+    } else {
+      const placeholder = { ...newQuestion, ...value };
+      setNewQuestion(placeholder);
+    }
   }
 
-  function SaveUpdatedQuestion() {
-    if (!payload) return;
-
-    switch (selectedIndex[1]) {
+  function GetQuestionKey(params: string) {
+    switch (params) {
       case "personalInformation":
-        const _questions = payload.attributes.personalInformation.personalQuestions
-        _questions[selectedIndex[0]] = newQuestion;
-        payload.attributes.personalInformation.personalQuestions = _questions;
-        setPayload(payload);
+        return "personalQuestions"
         break;
       case "profile":
-        const _questions2 = payload.attributes.profile.profileQuestions
-        _questions2[selectedIndex[0]] = newQuestion;
-        payload.attributes.profile.profileQuestions = _questions2;
-        setPayload(payload);
-        break;
-      case "customisedQuestions":
-        const _questions3 = payload.attributes.customisedQuestions
-        _questions3[selectedIndex[0]] = newQuestion;
-        payload.attributes.customisedQuestions = _questions3;
-        setPayload(payload);
+        return "profileQuestions"
         break;
       default:
+        return ""
         break;
     }
-    ResetSelectedIndex()
-    ResetQuestion();
+  }
+
+  function SaveQuestion(index: number) {
+    if (!payload) return;
+
+    UpdateLogic({
+      index,
+      data: { ...newQuestion, id: generateId() },
+      key: selectedMenu,
+      isDelete: false,
+      no_reset: false
+    })
+  }
+
+  function SaveUpdatedQuestion(no_reset?: boolean) {
+    if (!payload) return;
+
+    UpdateLogic({
+      data: newQuestion,
+      index: selectedIndex[0],
+      key: selectedIndex[1],
+      isDelete: false,
+      no_reset
+    })
+
   }
 
   function DeleteQuestion() {
     if (!payload) return;
 
-    switch (selectedIndex[1]) {
-      case "personalInformation":
-        const _questions = payload.attributes.personalInformation.personalQuestions
-        _questions.splice(selectedIndex[0], 1);
-        payload.attributes.personalInformation.personalQuestions = _questions;
-        setPayload(payload);
-        break;
-      case "profile":
-        const _questions2 = payload.attributes.profile.profileQuestions
-        _questions2.splice(selectedIndex[0], 1);
-        payload.attributes.profile.profileQuestions = _questions2;
-        setPayload(payload);
-        break;
-      case "customisedQuestions":
-        const _questions3 = payload.attributes.customisedQuestions
-        _questions3.splice(selectedIndex[0], 1);
-        payload.attributes.customisedQuestions = _questions3;
-        setPayload(payload);
-        break;
-      default:
-        break;
-    }
-    ResetSelectedIndex()
-    ResetQuestion();
-    setSelectedMenu("");
+    UpdateLogic({
+      data: newQuestion,
+      index: selectedIndex[0],
+      key: selectedIndex[1],
+      isDelete: true,
+    })
+
   }
 
   function Validation() {
@@ -279,7 +275,7 @@ export default function ApplicationForm() {
     setLoading(1);
     try {
       const response = await GetApplicationSchemaPayload(abortController);
-      console.log("payload", response);
+      // console.log("payload", response);
 
       setPayload(response);
     } catch (error) {
@@ -298,9 +294,10 @@ export default function ApplicationForm() {
 
     setLoading(2);
     try {
-      const res = await SubmitPayload(payload);
+      const response = await SubmitPayload(payload);
       message.success("Data updated succesfully");
-      console.log("res", res);
+      // console.log("res", response);
+      setPayload(response);
 
     } catch (error: any) {
       message.error("Oops, operation failed")
@@ -332,9 +329,11 @@ export default function ApplicationForm() {
       {/* coverimag */}
       <>
         {
-          previewUrl ? <div className="rounded-lg mb-8 w-[400px] shadow">
+          payload.attributes.coverImage || previewUrl ? <div className="rounded-lg mb-8 w-[400px] shadow">
             <div className="w-full h-[250px]">
-              <img src={previewUrl} className="w-full h-full object-cover object-center rounded-t-lg" alt="dummy" />
+              <img src={
+                payload.attributes.coverImage || previewUrl
+              } className="w-full h-full object-cover object-center rounded-t-lg" alt="dummy" />
             </div>
 
             <div
@@ -429,11 +428,12 @@ export default function ApplicationForm() {
                       ToggleUpdateQuestion={ToggleUpdateQuestion}
                       data={data}
                       index={i}
+                      category="personalInformation"
                     />
                   </>
 
                   {
-                    (selectedIndex[0] === i && selectedIndex[1] === "customisedQuestions") &&
+                    (selectedIndex[0] === i && selectedIndex[1] === "personalInformation") &&
                     <UpdateQuestionComponent
                       DeleteQuestion={DeleteQuestion}
                       SaveUpdatedQuestion={SaveUpdatedQuestion}
@@ -457,6 +457,7 @@ export default function ApplicationForm() {
               update={setNewQuestion}
               save={SaveQuestion}
               reset={ResetQuestion}
+              lastIndex={payload.attributes.personalInformation.personalQuestions.length}
             />
           }
         </>
@@ -529,6 +530,7 @@ export default function ApplicationForm() {
                       ToggleUpdateQuestion={ToggleUpdateQuestion}
                       data={data}
                       index={i}
+                      category="profile"
                     />
                   </>
 
@@ -556,6 +558,7 @@ export default function ApplicationForm() {
               update={setNewQuestion}
               save={SaveQuestion}
               reset={ResetQuestion}
+              lastIndex={payload.attributes.personalInformation.profileQuestions.length}
             />
           }
         </>
@@ -583,6 +586,7 @@ export default function ApplicationForm() {
                         ToggleUpdateQuestion={ToggleUpdateQuestion}
                         data={data}
                         index={i}
+                        category="customisedQuestions"
                       />
                     </>
 
@@ -610,6 +614,7 @@ export default function ApplicationForm() {
                 update={setNewQuestion}
                 save={SaveQuestion}
                 reset={ResetQuestion}
+                lastIndex={payload.attributes.customisedQuestions.length}
               />
             }
           </>

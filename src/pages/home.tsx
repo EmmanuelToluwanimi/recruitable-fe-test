@@ -14,9 +14,12 @@ export default function Home() {
           style={{
             width: "100%",
             minHeight: "100vh",
+            backgroundColor: "#F9FAFF"
           }}
         >
-          <Sidebar />
+          <div className='shadow'>
+            <Sidebar />
+          </div>
           <Content>
             <section className='p-10 h-[1000px] overflow-y-auto'>
               <Topbar />

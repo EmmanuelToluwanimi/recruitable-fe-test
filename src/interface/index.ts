@@ -5,8 +5,16 @@ export interface IPersonalInput {
   hasOptions: boolean
 }
 
+export interface IUpdateLogic {
+  key: string,
+  index: number,
+  data: Question,
+  isDelete?: boolean
+  no_reset?: boolean
+}
+
 export interface IApplicationData {
-  data : IApplicationSchema
+  data: IApplicationSchema
 }
 
 export interface IApplicationSchema {
@@ -20,6 +28,8 @@ export interface Attributes {
   personalInformation: PersonalInformation;
   profile: Profile;
   customisedQuestions: Question[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 export interface Question {

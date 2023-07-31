@@ -15,7 +15,7 @@ export default function AddQuestionButton({ AddQuestion, type, selectedMenu }: I
       <button
         onClick={() => AddQuestion(type)}
         className="flex items-center disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed gap-3 font-semibold p-4 rounded-b"
-        disabled={selectedMenu ? true : false}
+        disabled={selectedMenu === type ? true : false}
       >
         <div>
           <AiOutlinePlus className="text-xl" />

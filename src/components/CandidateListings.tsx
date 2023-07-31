@@ -23,7 +23,7 @@ export default function CandidateListings() {
   ]
 
   return (
-    <div className='px-4 border rounded-lg bg-white flex flex-col flex-grow shadow'>
+    <div className='px-4 rounded-lg bg-white flex flex-col flex-grow'>
 
       <div className='flex py-4 justify-between w-full'>
         <div className='flex gap-4 items-center'>

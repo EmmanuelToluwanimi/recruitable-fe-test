@@ -8,9 +8,10 @@ interface IAdditionalQuestionsComponent {
   data: Question;
   ToggleUpdateQuestion: Function;
   index: number;
+  category: string
 }
 
-export default function AdditionalQuestionsComponent({ data, ToggleUpdateQuestion, index }: IAdditionalQuestionsComponent) {
+export default function AdditionalQuestionsComponent({ data, ToggleUpdateQuestion, category, index }: IAdditionalQuestionsComponent) {
 
   return (
     <>
@@ -18,7 +19,7 @@ export default function AdditionalQuestionsComponent({ data, ToggleUpdateQuestio
 
       <div className="font-semibold pt-2 pb-6 flex justify-between items-center">
         <div className="w-[75%] ">{data.question}</div>
-        <div className="p-2" onClick={() => ToggleUpdateQuestion(index, "customisedQuestions", data)}>
+        <div role="button" className="p-2 cursor-pointer" onClick={() => ToggleUpdateQuestion(index, category, data)}>
           <img src={Assets.pen} alt="pen" />
         </div>
       </div>
