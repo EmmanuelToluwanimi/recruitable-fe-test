@@ -264,6 +264,11 @@ export default function ApplicationForm() {
 
   }
 
+  function ResetCoverImage(params:IApplicationSchema):IApplicationSchema {
+    params.attributes.coverImage = "";
+    return params;
+  }
+
   function Validation() {
     if (payload && !payload.attributes.coverImage) {
       return "Please upload an image"
@@ -277,7 +282,9 @@ export default function ApplicationForm() {
       const response = await GetApplicationSchemaPayload(abortController);
       // console.log("payload", response);
 
-      setPayload(response);
+      setPayload(
+        ResetCoverImage(response)
+      );
     } catch (error) {
       message.error("Error occured while fetching data.")
     }
